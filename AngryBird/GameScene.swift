@@ -21,6 +21,8 @@ class GameScene: SKScene {
     
     var gameStarted = false
     
+    var originalPosition : CGPoint?
+    
     override func didMove(to view: SKView) {
         
 //      create a new bird via code
@@ -51,6 +53,8 @@ class GameScene: SKScene {
         bird.physicsBody?.affectedByGravity = false
         bird.physicsBody?.isDynamic = true
         bird.physicsBody?.mass = 0.15
+        
+        originalPosition = bird.position
         
         //Box
         
@@ -165,6 +169,34 @@ class GameScene: SKScene {
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
+        if !gameStarted {
+            
+            if let touch = touches.first {
+                
+                let touchLocation = touch.location(in: self)
+                let touchNodes = nodes(at: touchLocation)
+                
+                if touchNodes.isEmpty == false {
+                    for node in touchNodes {
+                        if let sprite = node as? SKSpriteNode {
+                            
+                            if sprite === bird {
+                                let dx = -(touchLocation.x - originalPosition!.x)
+                                let dy = -(touchLocation.y - originalPosition!.y)
+                                
+                                let impulse = CGVector(dx: dx, dy: dy)
+                                
+                                bird.physicsBody?.applyImpulse(impulse)
+                                bird.physicsBody?.affectedByGravity = true
+                                
+                                gameStarted = true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -174,5 +206,14 @@ class GameScene: SKScene {
     
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
+        
+        if bird.physicsBody!.velocity.dx <= 0.1 && bird.physicsBody!.velocity.dy <= 0.1 && bird.physicsBody!.angularVelocity <= 0.1 && gameStarted {
+            
+            bird.physicsBody?.affectedByGravity = false
+            bird.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
+            bird.physicsBody?.angularVelocity = 0
+            bird.position = originalPosition!
+            gameStarted = false
+        }
     }
 }
